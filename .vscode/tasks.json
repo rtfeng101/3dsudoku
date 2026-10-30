@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build 3DSX",
+      "type": "shell",
+      "command": "make",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Build CIA",
+      "type": "shell",
+      "command": "make cia",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Send to 2DS (3dslink)",
+      "type": "shell",
+      "command": "make && 3dslink sudoku.3dsx",
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "make clean",
+      "problemMatcher": []
+    }
+  ]
+}
