@@ -6,6 +6,7 @@
 #include <3ds.h>
 #include <citro2d.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdbool.h>
 
 // Screen sizes in pixels. (0, 0) is the top-left corner of each screen.
@@ -42,6 +43,19 @@ bool is_solved(void)
 // number in the selected cell. hidKeysDown() gives you the buttons pressed this frame.
 void handle_input(u32 kDown)
 {
+}
+
+// Draws `str` centered inside the rectangle (x, y, w, h).
+void draw_centered(C2D_TextBuf textBuf, const char* str, float x, float y, float w, float h, float scale, u32 color)
+{
+	C2D_Text text;
+	C2D_TextParse(&text, textBuf, str);
+	C2D_TextOptimize(&text);
+
+	float textW, textH;
+	C2D_TextGetDimensions(&text, scale, scale, &textW, &textH);
+	// center by hand and round down, so the text starts on a whole pixel (fractional starts blur the glyphs)
+	C2D_DrawText(&text, C2D_WithColor, floorf(x + (w - textW) / 2), floorf(y + (h - textH) / 2), 0, scale, scale, color);
 }
 
 // TODO: bottom screen: a zoomed view of the cursor's 3x3 box, a number pad,
@@ -108,7 +122,20 @@ void draw_bottom(C2D_TextBuf textBuf)
 		C2D_DrawRectSolid(setX + 5, setY + 6 + i * 5, 0, 14, 2, thickColor);	// 3 bars, 14x2, 5px apart
 	}
 
-	// step 5: text (C2D_TextParse + C2D_DrawText): pad digits, button labels, "Box N" label.
+	// step 5: text for pad digits, button labels, "Box N" label
+	// keypad
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			char buf[4];
+			snprintf(buf, sizeof buf, "%d", row * 3 + col + 1);
+			draw_centered(textBuf, buf, padX + col * (keySize + keyGap), padY + row * (keySize + keyGap), keySize, keySize, 1.0f, thickColor);
+		}
+	}
+
+	// tools
+	draw_centered(textBuf, "Pen", switchX, toolY, halfW, toolH, 0.8f, pencil ? thickColor : thinColor);
+	draw_centered(textBuf, "Pencil", switchX + halfW, toolY, halfW, toolH, 0.8f, pencil ? thinColor : thickColor);
+	draw_centered(textBuf, "Erase", padX, toolY, padSize, toolH, 0.8f, thickColor);
 
 	// step 6: draw the digits from board[][] for the cursor's box.
 
