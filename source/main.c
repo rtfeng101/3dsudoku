@@ -140,12 +140,13 @@ void handle_input(u32 kDown)
 		int py = touch.py;
 
 		// cells of the 3x3 box: select that cell
-		int boxRow = cursorRow / 3, boxCol = cursorCol / 3;	// the box on screen, read before the cursor moves
+		int boxRow = cursorRow / 3;
+		int boxCol = cursorCol / 3;	// the box on screen, read before the cursor moves
 		for (int row = 0; row < 3; row++) {
 			for (int col = 0; col < 3; col++) {
 				if (inside(px, py, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE)) {
-					cursorRow = row;
-					cursorCol = col;
+					cursorRow = boxRow + row;
+					cursorCol = boxCol + col;
 				}
 			}
 		}
@@ -187,6 +188,7 @@ void handle_input(u32 kDown)
 	// erase (num == -1) clears the cell in either mode
 	if (num == -1) {
 		board[cursorRow][cursorCol] = 0;
+		return;
 	}
 
 	// num is 1-9 from here on
