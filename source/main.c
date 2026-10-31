@@ -343,7 +343,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 	}
 }
 
-// TODO: top screen: the whole 9x9 board, the title and mode on the left,
+// TODO: top screen: the whole 9x9 board, the title on the left,
 // "Solved!" on the right.
 void draw_top(C2D_TextBuf textBuf)
 {
@@ -401,9 +401,13 @@ void draw_top(C2D_TextBuf textBuf)
 		}
 	}
 
-	// step 6: left panel, "Sudoku" and Pen / Pencil
+	// step 6: left panel, "Sudoku" and Pen / Pencil, centered in the space left of the board
+	draw_centered(textBuf, "Sudoku", 0, boardY, boardX, 24, 0.8f, THICK_COLOR);
 
-	// step 7: right panel, "Solved!" when is_solved()
+	// step 7: right panel, "Solved!" when is_solved(), on the same line as the title
+	if (is_solved()) {
+		draw_centered(textBuf, "Solved!", boardX + boardSize, boardY, TOP_WIDTH - boardX - boardSize, 24, 0.8f, THICK_COLOR);
+	}
 }
 
 int main(int argc, char* argv[])
