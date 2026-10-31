@@ -49,10 +49,10 @@ void handle_input(u32 kDown)
 void draw_bottom(C2D_TextBuf textBuf)
 {
 	// box label, 3x3 grid + numpad, tools
-	int cellSize = 52;
-	int boxSize = 3 * cellSize;	// 156
-	int boxX = 8;	// left margin
-	int boxY = 30;	// leaves room above for the "Box N" label
+	int cellSize = 48;
+	int boxSize = 3 * cellSize;	// 144
+	int boxX = 10;	// 8px left margin + 2px border
+	int boxY = 34;	// leaves room above for the "Box N" label
 
 	u32 cellColor  = C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF);	// cream, so the cells show on the white background
 	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
@@ -74,7 +74,18 @@ void draw_bottom(C2D_TextBuf textBuf)
 	C2D_DrawRectSolid(boxX - 2, boxY + boxSize, 0, boxSize + 4, 2, thickColor); // bottom
 	
 	
-	// step 3: 3x3 number pad to the right of the box, with gaps between keys.
+	// step 3: 3x3 number pad to the right of the box, with gaps between keys
+	int keySize = 44;
+	int keyGap = 8;
+	int padSize = 3 * keySize + 2 * keyGap;	// 148, same as the box with its border
+	int padX = boxX + boxSize + 10;	// 164: 8px gap after the border, ends at x=311 (8px right margin)
+	int padY = boxY + (boxSize - padSize) / 2;	// 32: centered on the box, so it lines up with the border
+
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			C2D_DrawRectSolid(padX + col * (keySize + keyGap), padY + row * (keySize + keyGap), 0, keySize, keySize, cellColor);
+		}
+	}
 
 	// step 4: Pen | Pencil switch under the box, Erase button under the pad.
 
