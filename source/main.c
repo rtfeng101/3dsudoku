@@ -363,7 +363,8 @@ void draw_top(C2D_TextBuf textBuf)
 	C2D_DrawRectSolid(boardX, boardY, 0, boardSize, boardSize, CELL_COLOR);
 
 	// step 2: highlight the cursor's block and cell
-	int boxCol = cursorCol / 3 * 3, boxRow = cursorRow / 3 * 3;	// first cell of the box
+	int boxCol = cursorCol / 3 * 3;
+	int boxRow = cursorRow / 3 * 3;	
 	C2D_DrawRectSolid(boardX + pos[boxCol], boardY + pos[boxRow], 0, 3 * cellSize + 2, 3 * cellSize + 2, BOX_HIGHLIGHT_COLOR);	// 3 cells + 2 thin lines
 	C2D_DrawRectSolid(boardX + pos[cursorCol], boardY + pos[cursorRow], 0, cellSize, cellSize, HIGHLIGHT_COLOR);
 
@@ -387,8 +388,18 @@ void draw_top(C2D_TextBuf textBuf)
 		C2D_DrawRectSolid(boardX + pos[col * 3] - 2, boardY, 0, 2, boardSize, THICK_COLOR);
 	}
 
-	// step 5: digits from board[][], skip 0s (fixed ? THICK_COLOR : PEN_COLOR)
+	// step 5: digits from board[][], skip 0s (fixed[row][col] ? THICK_COLOR : PEN_COLOR)
 	// cell (row, col) is at boardX + pos[col], boardY + pos[row], cellSize x cellSize
+	for (int row = 0; row < 9; row++) {
+		for (int col = 0; col < 9; col++) {
+			int digit = board[row][col];
+			if (digit == 0) continue;
+
+			char buf[4];
+			snprintf(buf, sizeof buf, "%d", digit);
+			draw_centered(textBuf, buf, boardX + pos[col], boardY + pos[row], cellSize, cellSize, 0.6f, fixed[row][col] ? THICK_COLOR : PEN_COLOR);
+		}
+	}
 
 	// step 6: left panel, "Sudoku" and Pen / Pencil
 
