@@ -8,6 +8,11 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+// Screen sizes in pixels. (0, 0) is the top-left corner of each screen.
+#define TOP_WIDTH     400
+#define BOTTOM_WIDTH  320
+#define SCREEN_HEIGHT 240	// both screens are the same height
+
 // 0 means an empty cell.
 int board[9][9];
 // true for cells that came with the puzzle (the player can't change them).
@@ -39,11 +44,17 @@ void handle_input(u32 kDown)
 {
 }
 
-// TODO: draw the 9x9 grid, the numbers and the cursor. The bottom screen is 320x240 pixels.
+// TODO: draw the 9x9 grid, the numbers and the cursor on the bottom screen.
 // Shapes: C2D_DrawRectSolid(x, y, depth, w, h, color), C2D_DrawLine(...).
 // Numbers: C2D_TextParse(&text, textBuf, "5"), C2D_TextOptimize(&text),
 // then C2D_DrawText(&text, C2D_WithColor, x, y, depth, scaleX, scaleY, color).
-void draw_board(C2D_TextBuf textBuf)
+void draw_bottom(C2D_TextBuf textBuf)
+{
+}
+
+// TODO: draw the top screen: the title, "Press START to exit",
+// and a "Solved!" message once is_solved() is true. Same text calls as draw_bottom.
+void draw_top(C2D_TextBuf textBuf)
 {
 }
 
@@ -54,14 +65,10 @@ int main(int argc, char* argv[])
 	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
 	C2D_Prepare();
 
-	// Top screen: text console (50x30 characters). Bottom screen: citro2d graphics.
-	consoleInit(GFX_TOP, NULL);
+	C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
 	C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 	C2D_TextBuf textBuf = C2D_TextBufNew(256);	// room for 256 glyphs per frame
 	u32 white = C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF);
-
-	printf("\x1b[2;2H\x1b[36mSudoku\x1b[0m");
-	printf("\x1b[28;2HPress \x1b[32mSTART\x1b[0m to exit.");
 
 	load_puzzle();
 
@@ -77,15 +84,16 @@ int main(int argc, char* argv[])
 
 		C2D_TextBufClear(textBuf);
 		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
+
+		C2D_TargetClear(top, white);
+		C2D_SceneBegin(top);
+		draw_top(textBuf);
+
 		C2D_TargetClear(bottom, white);
 		C2D_SceneBegin(bottom);
-		draw_board(textBuf);
-		C3D_FrameEnd(0);	// also swaps buffers and waits for vblank
+		draw_bottom(textBuf);
 
-		if (is_solved())
-		{
-			// TODO: show a "solved!" message on the top screen.
-		}
+		C3D_FrameEnd(0);	// also swaps buffers and waits for vblank
 	}
 
 	C2D_TextBufDelete(textBuf);
