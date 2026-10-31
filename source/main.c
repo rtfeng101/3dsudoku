@@ -154,9 +154,9 @@ void draw_bottom(C2D_TextBuf textBuf)
 	int boxRow = cursorRow / 3;
 	int boxCol = cursorCol / 3;
 	
-	char buf[6];
-	snprintf(buf, sizeof buf, "Box %d", (boxCol + 1 + boxRow * 3));
-	draw_centered(textBuf, buf, setX, setY, BOTTOM_WIDTH - setX, setSize, 1.0f, thickColor);
+	char label[6];
+	snprintf(label, sizeof label, "Box %d", (boxCol + 1 + boxRow * 3));
+	draw_centered(textBuf, label, 0, setY, BOTTOM_WIDTH, setSize, 1.0f, thickColor);
 	
 	// keypad
 	for (int row = 0; row < 3; row++) {
@@ -180,7 +180,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 			if (digit == 0)
 				continue;
 			char buf[4];
-			snprintf(buf, sizeof buf, (digit != 0) ? "%d" : "", digit); // if the digit is 0, print nothing
+			snprintf(buf, sizeof buf, "%d", digit); // if the digit is 0, print nothing
 			draw_centered(textBuf, buf, boxX + col * cellSize, boxY + row * cellSize, cellSize, cellSize, 1.0f, thickColor);
 		}
 	}
