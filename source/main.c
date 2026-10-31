@@ -180,13 +180,20 @@ void handle_input(u32 kDown)
 	}
 
 	// step 4: put num in the cursor's cell
-	// skip when num == 0 or fixed[cursorRow][cursorCol]
-	// pen: board[cursorRow][cursorCol] = num, or 0 for erase
-	// pencil: do nothing for now, notes come later
+	// no action or fixed cell
 	if (num == 0 || fixed[cursorRow][cursorCol])
 		return;
 
+	// erase (num == -1) clears the cell in either mode
+	if (num == -1) {
+		board[cursorRow][cursorCol] = 0;
+	}
+
+	// num is 1-9 from here on
 	if (!pencil) {
+		board[cursorRow][cursorCol] = num;
+	} else {
+		// pencil: notes come later
 	}
 }
 
