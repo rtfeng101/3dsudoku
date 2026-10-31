@@ -92,9 +92,13 @@ void draw_bottom(C2D_TextBuf textBuf)
 	u32 cellColor  = C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF);	// cream, so the cells show on the white background
 	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
 	u32 thickColor = C2D_Color32(0x3A, 0x3A, 0x44, 0xFF);	// dark, around the box
+	u32 highlightColor = C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF); // pastel blue, highlight
 
 	// step 1: draw background for the 3x3 box
 	C2D_DrawRectSolid(boxX, boxY, 0, boxSize, boxSize, cellColor);
+
+	// highlight the current selected box
+	C2D_DrawRectSolid(boxX + (cursorCol % 3) * cellSize, boxY + (cursorRow % 3) * cellSize, 0, cellSize, cellSize, highlightColor);
 
 	// step 2: grid lines, drawn as thin rectangles
 	C2D_DrawRectSolid(boxX + cellSize, boxY, 0, 1, boxSize, thinColor);	// vertical
@@ -170,8 +174,6 @@ void draw_bottom(C2D_TextBuf textBuf)
 			draw_centered(textBuf, buf, boxX + col * cellSize, boxY + row * cellSize, cellSize, cellSize, 1.0f, thickColor);
 		}
 	}
-
-	// step 7: highlight the cursor's cell (in step 1, before the lines).
 }
 
 // TODO: top screen: the whole 9x9 board, the title and mode on the left,
