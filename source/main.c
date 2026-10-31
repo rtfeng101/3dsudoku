@@ -6,6 +6,7 @@
 #include <3ds.h>
 #include <citro2d.h>
 #include <stdio.h>
+#include <math.h>
 #include <stdbool.h>
 
 // Screen sizes in pixels. (0, 0) is the top-left corner of each screen.
@@ -21,9 +22,30 @@ bool fixed[9][9];
 int cursorRow = 0, cursorCol = 0;
 bool pencil = false;
 
-// TODO: put a starting puzzle into board[][] and mark its cells in fixed[][].
+// Puts a starting puzzle into board[][] and marks its cells in fixed[][].
 void load_puzzle(void)
 {
+	// shortcut: one hardcoded puzzle, swap for a list or generator when you want variety
+	static const int puzzle[9][9] = {
+		{5, 3, 0,  0, 7, 0,  0, 0, 0},
+		{6, 0, 0,  1, 9, 5,  0, 0, 0},
+		{0, 9, 8,  0, 0, 0,  0, 6, 0},
+
+		{8, 0, 0,  0, 6, 0,  0, 0, 3},
+		{4, 0, 0,  8, 0, 3,  0, 0, 1},
+		{7, 0, 0,  0, 2, 0,  0, 0, 6},
+
+		{0, 6, 0,  0, 0, 0,  2, 8, 0},
+		{0, 0, 0,  4, 1, 9,  0, 0, 5},
+		{0, 0, 0,  0, 8, 0,  0, 7, 9},
+	};
+
+	for (int row = 0; row < 9; row++) {
+		for (int col = 0; col < 9; col++) {
+			board[row][col] = puzzle[row][col];
+			fixed[row][col] = puzzle[row][col] != 0;	// given numbers can't be changed
+		}
+	}
 }
 
 // TODO: can `num` go at (row, col)? Check the row, the column and the 3x3 box.
@@ -44,10 +66,124 @@ void handle_input(u32 kDown)
 {
 }
 
-// TODO: bottom screen: a zoomed view of the cursor's 3x3 box, a number pad,
+// Draws `str` centered inside the rectangle (x, y, w, h).
+void draw_centered(C2D_TextBuf textBuf, const char* str, float x, float y, float w, float h, float scale, u32 color)
+{
+	C2D_Text text;
+	C2D_TextParse(&text, textBuf, str);
+	C2D_TextOptimize(&text);
+
+	float textW, textH;
+	C2D_TextGetDimensions(&text, scale, scale, &textW, &textH);
+	// center by hand and round down, so the text starts on a whole pixel (fractional starts blur the glyphs)
+	C2D_DrawText(&text, C2D_WithColor, floorf(x + (w - textW) / 2), floorf(y + (h - textH) / 2), 0, scale, scale, color);
+}
+
+// bottom screen: a zoomed view of the cursor's 3x3 box, a number pad,
 // a Pen | Pencil switch and an Erase button.
 void draw_bottom(C2D_TextBuf textBuf)
 {
+	// box label, 3x3 grid + numpad, tools
+	int cellSize = 48;
+	int boxSize = 3 * cellSize;	// 144
+	int boxX = 10;	// 8px left margin + 2px border
+	int boxY = 42;	// leaves room above for the settings button and "Box N" label
+
+	u32 cellColor  = C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF);	// cream, so the cells show on the white background
+	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
+	u32 thickColor = C2D_Color32(0x3A, 0x3A, 0x44, 0xFF);	// dark, around the box
+	u32 highlightColor = C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF); // pastel blue, highlight
+
+	// step 1: draw background for the 3x3 box
+	C2D_DrawRectSolid(boxX, boxY, 0, boxSize, boxSize, cellColor);
+
+	// highlight the current selected cell
+	C2D_DrawRectSolid(boxX + (cursorCol % 3) * cellSize, boxY + (cursorRow % 3) * cellSize, 0, cellSize, cellSize, highlightColor);
+
+	// step 2: grid lines, drawn as thin rectangles
+	C2D_DrawRectSolid(boxX + cellSize, boxY, 0, 1, boxSize, thinColor);	// vertical
+	C2D_DrawRectSolid(boxX + 2 * cellSize, boxY, 0, 1, boxSize, thinColor);	// vertical
+	C2D_DrawRectSolid(boxX, boxY + cellSize, 0, boxSize, 1, thinColor);	// horizontal
+	C2D_DrawRectSolid(boxX, boxY + 2 * cellSize, 0, boxSize, 1, thinColor);	// horizontal
+
+	// border last
+	C2D_DrawRectSolid(boxX - 2, boxY - 2, 0, 2, boxSize + 4, thickColor); // left
+	C2D_DrawRectSolid(boxX + boxSize, boxY - 2, 0, 2, boxSize + 4, thickColor); // right
+	C2D_DrawRectSolid(boxX - 2, boxY - 2, 0, boxSize + 4, 2, thickColor); // top
+	C2D_DrawRectSolid(boxX - 2, boxY + boxSize, 0, boxSize + 4, 2, thickColor); // bottom
+	
+	
+	// step 3: 3x3 number pad to the right of the box, with gaps between keys
+	int keySize = 44;
+	int keyGap = 8;
+	int padSize = 3 * keySize + 2 * keyGap;	// 148, same as the box with its border
+	int padX = boxX + boxSize + 10;	// 164: 8px gap after the border, ends at x=311 (8px right margin)
+	int padY = boxY + (boxSize - padSize) / 2;	// 40: centered on the box, so it lines up with the border
+
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			C2D_DrawRectSolid(padX + col * (keySize + keyGap), padY + row * (keySize + keyGap), 0, keySize, keySize, cellColor);
+		}
+	}
+
+	// step 4: Pen | Pencil switch under the box, Erase button under the pad
+	int toolY = boxY + boxSize + 10;	// 196px, 8px gap after the bottom border
+	int toolH = 36;	// 36px, ends at y=231 (8px bottom margin)
+	int switchX = boxX - 2;	// 8px,	 lines up with the box's outer border
+	int switchW = boxSize + 4;	// 148px, the box plus its border
+	int halfW = switchW / 2;	// 74px, Pen | Pencil
+
+	// switch
+	C2D_DrawRectSolid(switchX, toolY, 0, switchW, toolH, cellColor);
+	C2D_DrawRectSolid(switchX + pencil * halfW, toolY, 0, halfW, toolH, thickColor); // select switch
+
+	// erase button
+	C2D_DrawRectSolid(padX, toolY, 0, padSize, toolH, cellColor);
+
+	// settings button in the top left, with a ☰ icon
+	int setX = 8;
+	int setY = 8;
+	int setSize = 24;	// ends at y=31, 8px above the box border
+	C2D_DrawRectSolid(setX, setY, 0, setSize, setSize, cellColor);
+	for (int i = 0; i < 3; i++) {
+		C2D_DrawRectSolid(setX + 5, setY + 6 + i * 5, 0, 14, 2, thickColor);	// 3 bars, 14x2, 5px apart
+	}
+
+	// step 5: text for pad digits, button labels, "Box N" label
+	// label
+	int boxRow = cursorRow / 3;
+	int boxCol = cursorCol / 3;
+	
+	char label[6];
+	snprintf(label, sizeof label, "Box %d", (boxCol + 1 + boxRow * 3));
+	draw_centered(textBuf, label, 0, setY, BOTTOM_WIDTH, setSize, 1.0f, thickColor);
+	
+	// keypad
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			char buf[4];
+			snprintf(buf, sizeof buf, "%d", row * 3 + col + 1);
+			draw_centered(textBuf, buf, padX + col * (keySize + keyGap), padY + row * (keySize + keyGap), keySize, keySize, 1.0f, thickColor);
+		}
+	}
+
+	// tools
+	draw_centered(textBuf, "Pen", switchX, toolY, halfW, toolH, 0.8f, pencil ? thickColor : thinColor);
+	draw_centered(textBuf, "Pencil", switchX + halfW, toolY, halfW, toolH, 0.8f, pencil ? thinColor : thickColor);
+	draw_centered(textBuf, "Erase", padX, toolY, padSize, toolH, 0.8f, thickColor);
+
+	// step 6: draw the digits from board[][] for the cursor's box
+
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			int digit = board[boxRow * 3 + row][boxCol * 3 + col];
+			if (digit == 0)
+				continue;
+			char buf[4];
+			snprintf(buf, sizeof buf, "%d", digit); // if the digit is 0, print nothing
+			draw_centered(textBuf, buf, boxX + col * cellSize, boxY + row * cellSize, cellSize, cellSize, 1.0f, thickColor);
+		}
+	}
 }
 
 // TODO: top screen: the whole 9x9 board, the title and mode on the left,
