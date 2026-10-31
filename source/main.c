@@ -44,16 +44,14 @@ void handle_input(u32 kDown)
 {
 }
 
-// TODO: draw the 9x9 grid, the numbers and the cursor on the bottom screen.
-// Shapes: C2D_DrawRectSolid(x, y, depth, w, h, color), C2D_DrawLine(...).
-// Numbers: C2D_TextParse(&text, textBuf, "5"), C2D_TextOptimize(&text),
-// then C2D_DrawText(&text, C2D_WithColor, x, y, depth, scaleX, scaleY, color).
+// TODO: bottom screen: a zoomed view of the cursor's 3x3 box, a number pad,
+// a Pen | Pencil switch and an Erase button.
 void draw_bottom(C2D_TextBuf textBuf)
 {
 }
 
-// TODO: draw the top screen: the title, "Press START to exit",
-// and a "Solved!" message once is_solved() is true. Same text calls as draw_bottom.
+// TODO: top screen: the whole 9x9 board, the title and mode on the left,
+// "Solved!" on the right.
 void draw_top(C2D_TextBuf textBuf)
 {
 }
