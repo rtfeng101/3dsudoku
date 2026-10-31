@@ -79,7 +79,7 @@ void draw_centered(C2D_TextBuf textBuf, const char* str, float x, float y, float
 	C2D_DrawText(&text, C2D_WithColor, floorf(x + (w - textW) / 2), floorf(y + (h - textH) / 2), 0, scale, scale, color);
 }
 
-// TODO: bottom screen: a zoomed view of the cursor's 3x3 box, a number pad,
+// bottom screen: a zoomed view of the cursor's 3x3 box, a number pad,
 // a Pen | Pencil switch and an Erase button.
 void draw_bottom(C2D_TextBuf textBuf)
 {
@@ -97,7 +97,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 	// step 1: draw background for the 3x3 box
 	C2D_DrawRectSolid(boxX, boxY, 0, boxSize, boxSize, cellColor);
 
-	// highlight the current selected box
+	// highlight the current selected cell
 	C2D_DrawRectSolid(boxX + (cursorCol % 3) * cellSize, boxY + (cursorRow % 3) * cellSize, 0, cellSize, cellSize, highlightColor);
 
 	// step 2: grid lines, drawn as thin rectangles
@@ -141,13 +141,23 @@ void draw_bottom(C2D_TextBuf textBuf)
 	C2D_DrawRectSolid(padX, toolY, 0, padSize, toolH, cellColor);
 
 	// settings button in the top left, with a ☰ icon
-	int setX = 8, setY = 8, setSize = 24;	// ends at y=31, 8px above the box border
+	int setX = 8;
+	int setY = 8;
+	int setSize = 24;	// ends at y=31, 8px above the box border
 	C2D_DrawRectSolid(setX, setY, 0, setSize, setSize, cellColor);
 	for (int i = 0; i < 3; i++) {
 		C2D_DrawRectSolid(setX + 5, setY + 6 + i * 5, 0, 14, 2, thickColor);	// 3 bars, 14x2, 5px apart
 	}
 
 	// step 5: text for pad digits, button labels, "Box N" label
+	// label
+	int boxRow = cursorRow / 3;
+	int boxCol = cursorCol / 3;
+	
+	char buf[6];
+	snprintf(buf, sizeof buf, "Box %d", (boxCol + 1 + boxRow * 3));
+	draw_centered(textBuf, buf, setX, setY, BOTTOM_WIDTH - setX, setSize, 1.0f, thickColor);
+	
 	// keypad
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 3; col++) {
@@ -163,13 +173,13 @@ void draw_bottom(C2D_TextBuf textBuf)
 	draw_centered(textBuf, "Erase", padX, toolY, padSize, toolH, 0.8f, thickColor);
 
 	// step 6: draw the digits from board[][] for the cursor's box
-	int boxRow = cursorRow / 3;
-	int boxCol = cursorCol / 3;
 
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 3; col++) {
-			char buf[4];
 			int digit = board[boxRow * 3 + row][boxCol * 3 + col];
+			if (digit == 0)
+				continue;
+			char buf[4];
 			snprintf(buf, sizeof buf, (digit != 0) ? "%d" : "", digit); // if the digit is 0, print nothing
 			draw_centered(textBuf, buf, boxX + col * cellSize, boxY + row * cellSize, cellSize, cellSize, 1.0f, thickColor);
 		}
