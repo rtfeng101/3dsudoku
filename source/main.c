@@ -48,6 +48,41 @@ void handle_input(u32 kDown)
 // a Pen | Pencil switch and an Erase button.
 void draw_bottom(C2D_TextBuf textBuf)
 {
+	// box label, 3x3 grid + numpad, tools
+	int cellSize = 52;
+	int boxSize = 3 * cellSize;	// 156
+	int boxX = 8;	// left margin
+	int boxY = 30;	// leaves room above for the "Box N" label
+
+	u32 cellColor  = C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF);	// cream, so the cells show on the white background
+	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
+	u32 thickColor = C2D_Color32(0x3A, 0x3A, 0x44, 0xFF);	// dark, around the box
+
+	// step 1: draw background for the 3x3 box
+	C2D_DrawRectSolid(boxX, boxY, 0, boxSize, boxSize, cellColor);
+
+	// step 2: grid lines, drawn as thin rectangles
+	C2D_DrawRectSolid(boxX + cellSize, boxY, 0, 1, boxSize, thinColor);	// vertical
+	C2D_DrawRectSolid(boxX + 2 * cellSize, boxY, 0, 1, boxSize, thinColor);	// vertical
+	C2D_DrawRectSolid(boxX, boxY + cellSize, 0, boxSize, 1, thinColor);	// horizontal
+	C2D_DrawRectSolid(boxX, boxY + 2 * cellSize, 0, boxSize, 1, thinColor);	// horizontal
+
+	// Border last, so it covers the ends of the inner lines
+	C2D_DrawRectSolid(boxX - 2, boxY - 2, 0, 2, boxSize + 4, thickColor); // left
+	C2D_DrawRectSolid(boxX + boxSize, boxY - 2, 0, 2, boxSize + 4, thickColor); // right
+	C2D_DrawRectSolid(boxX - 2, boxY - 2, 0, boxSize + 4, 2, thickColor); // top
+	C2D_DrawRectSolid(boxX - 2, boxY + boxSize, 0, boxSize + 4, 2, thickColor); // bottom
+	
+	
+	// step 3: 3x3 number pad to the right of the box, with gaps between keys.
+
+	// step 4: Pen | Pencil switch under the box, Erase button under the pad.
+
+	// step 5: text (C2D_TextParse + C2D_DrawText): pad digits, button labels, "Box N" label.
+
+	// step 6: draw the digits from board[][] for the cursor's box.
+
+	// step 7: highlight the cursor's cell (in step 1, before the lines).
 }
 
 // TODO: top screen: the whole 9x9 board, the title and mode on the left,
