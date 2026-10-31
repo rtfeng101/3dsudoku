@@ -39,11 +39,27 @@
 
 // 0 means an empty cell.
 int board[9][9];
-// true for cells that came with the puzzle (the player can't change them).
+// true for cells that came with the puzzle or got locked in (the player can't change them).
 bool fixed[9][9];
 
 int cursorRow = 0, cursorCol = 0;
 bool pencil = false;
+
+// The answer to the puzzle in load_puzzle, used to lock in correct rows, columns and boxes.
+// shortcut: hardcoded alongside the puzzle, replace with a solver when you add more puzzles
+static const int solution[9][9] = {
+	{5, 3, 4,  6, 7, 8,  9, 1, 2},
+	{6, 7, 2,  1, 9, 5,  3, 4, 8},
+	{1, 9, 8,  3, 4, 2,  5, 6, 7},
+
+	{8, 5, 9,  7, 6, 1,  4, 2, 3},
+	{4, 2, 6,  8, 5, 3,  7, 9, 1},
+	{7, 1, 3,  9, 2, 4,  8, 5, 6},
+
+	{9, 6, 1,  5, 3, 7,  2, 8, 4},
+	{2, 8, 7,  4, 1, 9,  6, 3, 5},
+	{3, 4, 5,  2, 8, 6,  1, 7, 9},
+};
 
 // Puts a starting puzzle into board[][] and marks its cells in fixed[][].
 void load_puzzle(void)
@@ -87,6 +103,30 @@ bool is_solved(void)
 bool inside(int px, int py, int x, int y, int w, int h)
 {
 	return px >= x && px < x + w && py >= y && py < y + h;
+}
+
+// After a pen entry at (row, col): if its row, column or box matches the solution, lock those 9 cells.
+void lock_groups(int row, int col)
+{
+	int boxRow = row / 3 * 3, boxCol = col / 3 * 3;	// top-left cell of the box
+	bool rowOk = true, colOk = true, boxOk = true;
+
+	// check: any cell that differs from solution[][] makes its group not ok
+	for (int i = 0; i < 9; i++) {
+		// check row
+		if (board[row][i] != solution[row][i]) rowOk = false;
+		// check col
+		if (board[i][col] != solution[i][col]) colOk = false;
+		// box: board[boxRow + i / 3][boxCol + i % 3]
+		if (board[boxRow + i / 3][boxCol + i % 3] != solution[boxRow + i / 3][boxCol + i % 3]) boxOk = false;
+	}
+
+	// lock: set fixed = true for every cell of each ok group
+	for (int i = 0; i < 9; i++) {
+		if (rowOk) fixed[row][i] = true;
+		if (colOk) fixed[i][col] = true;
+		if (boxOk) fixed[boxRow + i/3][boxCol + i % 3] = true;
+	}
 }
 
 // D-pad moves the cursor, the circle pad jumps a box, the touch screen picks numbers and tools,
@@ -194,6 +234,7 @@ void handle_input(u32 kDown)
 	// num is 1-9 from here on
 	if (!pencil) {
 		board[cursorRow][cursorCol] = num;
+		lock_groups(cursorRow, cursorCol);
 	} else {
 		// pencil: notes come later
 	}
@@ -221,6 +262,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
 	u32 thickColor = C2D_Color32(0x3A, 0x3A, 0x44, 0xFF);	// dark, around the box
 	u32 highlightColor = C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF); // pastel blue, highlight
+	u32 penColor = C2D_Color32(0x2B, 0x4C, 0x9E, 0xFF);	// dark blue, player numbers that aren't locked in yet
 
 	// step 1: draw background for the 3x3 box
 	C2D_DrawRectSolid(BOX_X, BOX_Y, 0, BOX_SIZE, BOX_SIZE, cellColor);
@@ -294,7 +336,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 				continue;
 			char buf[4];
 			snprintf(buf, sizeof buf, "%d", digit); // if the digit is 0, print nothing
-			draw_centered(textBuf, buf, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE, 1.0f, thickColor);
+			draw_centered(textBuf, buf, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE, 1.0f, fixed[boxRow * 3 + row][boxCol * 3 + col] ? thickColor : penColor);
 		}
 	}
 }
