@@ -38,12 +38,13 @@
 #define SET_SIZE  24	// ends at y=31, 8px above the box border
 
 // Colors, shared by both screens. #define because C2D_Color32 isn't a compile-time constant in C.
-#define WHITE           C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF)	// screen background
-#define CELL_COLOR      C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF)	// cream, so the cells show on the white background
-#define THIN_COLOR      C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF)	// light gray, between cells
-#define THICK_COLOR     C2D_Color32(0x3A, 0x3A, 0x44, 0xFF)	// dark, around the box
-#define HIGHLIGHT_COLOR C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF)	// pastel blue, highlight
-#define PEN_COLOR       C2D_Color32(0x2B, 0x4C, 0x9E, 0xFF)	// dark blue, player numbers that aren't locked in yet
+#define WHITE               C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF)	// screen background
+#define CELL_COLOR          C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF)	// cream, so the cells show on the white background
+#define THIN_COLOR          C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF)	// light gray, between cells
+#define THICK_COLOR         C2D_Color32(0x3A, 0x3A, 0x44, 0xFF)	// dark, around the box
+#define HIGHLIGHT_COLOR     C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF)	// pastel blue, highlight
+#define BOX_HIGHLIGHT_COLOR C2D_Color32(0xD6, 0xEB, 0xF2, 0xFF)	// HIGHLIGHT_COLOR halfway to white, the cursor's 3x3 box
+#define PEN_COLOR           C2D_Color32(0x2B, 0x4C, 0x9E, 0xFF)	// dark blue, player numbers that aren't locked in yet
 
 // 0 means an empty cell.
 int board[9][9];
@@ -346,6 +347,52 @@ void draw_bottom(C2D_TextBuf textBuf)
 // "Solved!" on the right.
 void draw_top(C2D_TextBuf textBuf)
 {
+	// layout: the 9x9 board centered, a panel on each side. Lines get their own pixels, so every cell is the same size.
+	const int cellSize = 23;
+	const int boardSize = 9 * cellSize + 6 * 1 + 4 * 2;	// 221: 9 cells, 6 thin lines, 4 thick lines (border included)
+	const int boardX = (TOP_WIDTH - boardSize) / 2;	// 89, the width of each side panel
+	const int boardY = (SCREEN_HEIGHT - boardSize) / 2;	// 9, top and bottom margin
+
+	// pos[i]: where cell i starts, from the board's edge. pos[9] = boardSize, the far edge.
+	int pos[10];
+	for (int i = 0; i < 10; i++) {
+		pos[i] = 2 + i * (cellSize + 1) + i / 3;	// border, cells + 1px lines, +1 more per thick line passed
+	}
+
+	// step 1: background for the whole board (CELL_COLOR)
+	C2D_DrawRectSolid(boardX, boardY, 0, boardSize, boardSize, CELL_COLOR);
+
+	// step 2: highlight the cursor's block and cell
+	int boxCol = cursorCol / 3 * 3, boxRow = cursorRow / 3 * 3;	// first cell of the box
+	C2D_DrawRectSolid(boardX + pos[boxCol], boardY + pos[boxRow], 0, 3 * cellSize + 2, 3 * cellSize + 2, BOX_HIGHLIGHT_COLOR);	// 3 cells + 2 thin lines
+	C2D_DrawRectSolid(boardX + pos[cursorCol], boardY + pos[cursorRow], 0, cellSize, cellSize, HIGHLIGHT_COLOR);
+
+	// step 3: thin lines between cells, 1px, just before each cell
+	// left right
+	for (int row = 1; row < 9; row++) {
+		C2D_DrawRectSolid(boardX, boardY + pos[row] - 1, 0, boardSize, 1, THIN_COLOR);
+	}
+	// top bottom
+	for (int col = 1; col < 9; col++) {
+		C2D_DrawRectSolid(boardX + pos[col] - 1, boardY, 0, 1, boardSize, THIN_COLOR);
+	}
+
+	// step 4: thick lines every 3 cells + the outer border, 2px, just before cells 0, 3, 6 and the far edge
+	// left right
+	for (int row = 0; row < 4; row++) {
+		C2D_DrawRectSolid(boardX, boardY + pos[row * 3] - 2, 0, boardSize, 2, THICK_COLOR);
+	}
+	// top bottom
+	for (int col = 0; col < 4; col++) {
+		C2D_DrawRectSolid(boardX + pos[col * 3] - 2, boardY, 0, 2, boardSize, THICK_COLOR);
+	}
+
+	// step 5: digits from board[][], skip 0s (fixed ? THICK_COLOR : PEN_COLOR)
+	// cell (row, col) is at boardX + pos[col], boardY + pos[row], cellSize x cellSize
+
+	// step 6: left panel, "Sudoku" and Pen / Pencil
+
+	// step 7: right panel, "Solved!" when is_solved()
 }
 
 int main(int argc, char* argv[])
