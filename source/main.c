@@ -37,6 +37,15 @@
 #define SET_Y     8
 #define SET_SIZE  24	// ends at y=31, 8px above the box border
 
+// Colors, shared by both screens. #define because C2D_Color32 isn't a compile-time constant in C.
+#define WHITE               C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF)	// screen background
+#define CELL_COLOR          C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF)	// cream, so the cells show on the white background
+#define THIN_COLOR          C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF)	// light gray, between cells
+#define THICK_COLOR         C2D_Color32(0x3A, 0x3A, 0x44, 0xFF)	// dark, around the box
+#define HIGHLIGHT_COLOR     C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF)	// pastel blue, highlight
+#define BOX_HIGHLIGHT_COLOR C2D_Color32(0xD6, 0xEB, 0xF2, 0xFF)	// HIGHLIGHT_COLOR halfway to white, the cursor's 3x3 box
+#define PEN_COLOR           C2D_Color32(0x2B, 0x4C, 0x9E, 0xFF)	// dark blue, player numbers that aren't locked in yet
+
 // 0 means an empty cell.
 int board[9][9];
 // true for cells that came with the puzzle or got locked in (the player can't change them).
@@ -257,51 +266,44 @@ void draw_centered(C2D_TextBuf textBuf, const char* str, float x, float y, float
 // a Pen | Pencil switch and an Erase button.
 void draw_bottom(C2D_TextBuf textBuf)
 {
-	// box label, 3x3 grid + numpad, tools
-	u32 cellColor  = C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF);	// cream, so the cells show on the white background
-	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
-	u32 thickColor = C2D_Color32(0x3A, 0x3A, 0x44, 0xFF);	// dark, around the box
-	u32 highlightColor = C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF); // pastel blue, highlight
-	u32 penColor = C2D_Color32(0x2B, 0x4C, 0x9E, 0xFF);	// dark blue, player numbers that aren't locked in yet
-
 	// step 1: draw background for the 3x3 box
-	C2D_DrawRectSolid(BOX_X, BOX_Y, 0, BOX_SIZE, BOX_SIZE, cellColor);
+	C2D_DrawRectSolid(BOX_X, BOX_Y, 0, BOX_SIZE, BOX_SIZE, CELL_COLOR);
 
 	// highlight the current selected cell
-	C2D_DrawRectSolid(BOX_X + (cursorCol % 3) * CELL_SIZE, BOX_Y + (cursorRow % 3) * CELL_SIZE, 0, CELL_SIZE, CELL_SIZE, highlightColor);
+	C2D_DrawRectSolid(BOX_X + (cursorCol % 3) * CELL_SIZE, BOX_Y + (cursorRow % 3) * CELL_SIZE, 0, CELL_SIZE, CELL_SIZE, HIGHLIGHT_COLOR);
 
 	// step 2: grid lines, drawn as thin rectangles
-	C2D_DrawRectSolid(BOX_X + CELL_SIZE, BOX_Y, 0, 1, BOX_SIZE, thinColor);	// vertical
-	C2D_DrawRectSolid(BOX_X + 2 * CELL_SIZE, BOX_Y, 0, 1, BOX_SIZE, thinColor);	// vertical
-	C2D_DrawRectSolid(BOX_X, BOX_Y + CELL_SIZE, 0, BOX_SIZE, 1, thinColor);	// horizontal
-	C2D_DrawRectSolid(BOX_X, BOX_Y + 2 * CELL_SIZE, 0, BOX_SIZE, 1, thinColor);	// horizontal
+	C2D_DrawRectSolid(BOX_X + CELL_SIZE, BOX_Y, 0, 1, BOX_SIZE, THIN_COLOR);	// vertical
+	C2D_DrawRectSolid(BOX_X + 2 * CELL_SIZE, BOX_Y, 0, 1, BOX_SIZE, THIN_COLOR);	// vertical
+	C2D_DrawRectSolid(BOX_X, BOX_Y + CELL_SIZE, 0, BOX_SIZE, 1, THIN_COLOR);	// horizontal
+	C2D_DrawRectSolid(BOX_X, BOX_Y + 2 * CELL_SIZE, 0, BOX_SIZE, 1, THIN_COLOR);	// horizontal
 
 	// border last
-	C2D_DrawRectSolid(BOX_X - 2, BOX_Y - 2, 0, 2, BOX_SIZE + 4, thickColor); // left
-	C2D_DrawRectSolid(BOX_X + BOX_SIZE, BOX_Y - 2, 0, 2, BOX_SIZE + 4, thickColor); // right
-	C2D_DrawRectSolid(BOX_X - 2, BOX_Y - 2, 0, BOX_SIZE + 4, 2, thickColor); // top
-	C2D_DrawRectSolid(BOX_X - 2, BOX_Y + BOX_SIZE, 0, BOX_SIZE + 4, 2, thickColor); // bottom
+	C2D_DrawRectSolid(BOX_X - 2, BOX_Y - 2, 0, 2, BOX_SIZE + 4, THICK_COLOR); // left
+	C2D_DrawRectSolid(BOX_X + BOX_SIZE, BOX_Y - 2, 0, 2, BOX_SIZE + 4, THICK_COLOR); // right
+	C2D_DrawRectSolid(BOX_X - 2, BOX_Y - 2, 0, BOX_SIZE + 4, 2, THICK_COLOR); // top
+	C2D_DrawRectSolid(BOX_X - 2, BOX_Y + BOX_SIZE, 0, BOX_SIZE + 4, 2, THICK_COLOR); // bottom
 	
 	
 	// step 3: 3x3 number pad to the right of the box, with gaps between keys
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 3; col++) {
-			C2D_DrawRectSolid(PAD_X + col * (KEY_SIZE + KEY_GAP), PAD_Y + row * (KEY_SIZE + KEY_GAP), 0, KEY_SIZE, KEY_SIZE, cellColor);
+			C2D_DrawRectSolid(PAD_X + col * (KEY_SIZE + KEY_GAP), PAD_Y + row * (KEY_SIZE + KEY_GAP), 0, KEY_SIZE, KEY_SIZE, CELL_COLOR);
 		}
 	}
 
 	// step 4: Pen | Pencil switch under the box, Erase button under the pad
 	// switch
-	C2D_DrawRectSolid(SWITCH_X, TOOL_Y, 0, SWITCH_W, TOOL_H, cellColor);
-	C2D_DrawRectSolid(SWITCH_X + pencil * HALF_W, TOOL_Y, 0, HALF_W, TOOL_H, thickColor); // select switch
+	C2D_DrawRectSolid(SWITCH_X, TOOL_Y, 0, SWITCH_W, TOOL_H, CELL_COLOR);
+	C2D_DrawRectSolid(SWITCH_X + pencil * HALF_W, TOOL_Y, 0, HALF_W, TOOL_H, THICK_COLOR); // select switch
 
 	// erase button
-	C2D_DrawRectSolid(PAD_X, TOOL_Y, 0, PAD_SIZE, TOOL_H, cellColor);
+	C2D_DrawRectSolid(PAD_X, TOOL_Y, 0, PAD_SIZE, TOOL_H, CELL_COLOR);
 
 	// settings button in the top left, with a ☰ icon
-	C2D_DrawRectSolid(SET_X, SET_Y, 0, SET_SIZE, SET_SIZE, cellColor);
+	C2D_DrawRectSolid(SET_X, SET_Y, 0, SET_SIZE, SET_SIZE, CELL_COLOR);
 	for (int i = 0; i < 3; i++) {
-		C2D_DrawRectSolid(SET_X + 5, SET_Y + 6 + i * 5, 0, 14, 2, thickColor);	// 3 bars, 14x2, 5px apart
+		C2D_DrawRectSolid(SET_X + 5, SET_Y + 6 + i * 5, 0, 14, 2, THICK_COLOR);	// 3 bars, 14x2, 5px apart
 	}
 
 	// step 5: text for pad digits, button labels, "Box N" label
@@ -311,21 +313,21 @@ void draw_bottom(C2D_TextBuf textBuf)
 	
 	char label[6];
 	snprintf(label, sizeof label, "Box %d", (boxCol + 1 + boxRow * 3));
-	draw_centered(textBuf, label, 0, SET_Y, BOTTOM_WIDTH, SET_SIZE, 1.0f, thickColor);
+	draw_centered(textBuf, label, 0, SET_Y, BOTTOM_WIDTH, SET_SIZE, 1.0f, THICK_COLOR);
 	
 	// keypad
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 3; col++) {
 			char buf[4];
 			snprintf(buf, sizeof buf, "%d", row * 3 + col + 1);
-			draw_centered(textBuf, buf, PAD_X + col * (KEY_SIZE + KEY_GAP), PAD_Y + row * (KEY_SIZE + KEY_GAP), KEY_SIZE, KEY_SIZE, 1.0f, thickColor);
+			draw_centered(textBuf, buf, PAD_X + col * (KEY_SIZE + KEY_GAP), PAD_Y + row * (KEY_SIZE + KEY_GAP), KEY_SIZE, KEY_SIZE, 1.0f, THICK_COLOR);
 		}
 	}
 
 	// tools
-	draw_centered(textBuf, "Pen", SWITCH_X, TOOL_Y, HALF_W, TOOL_H, 0.8f, pencil ? thickColor : thinColor);
-	draw_centered(textBuf, "Pencil", SWITCH_X + HALF_W, TOOL_Y, HALF_W, TOOL_H, 0.8f, pencil ? thinColor : thickColor);
-	draw_centered(textBuf, "Erase", PAD_X, TOOL_Y, PAD_SIZE, TOOL_H, 0.8f, thickColor);
+	draw_centered(textBuf, "Pen", SWITCH_X, TOOL_Y, HALF_W, TOOL_H, 0.8f, pencil ? THICK_COLOR : THIN_COLOR);
+	draw_centered(textBuf, "Pencil", SWITCH_X + HALF_W, TOOL_Y, HALF_W, TOOL_H, 0.8f, pencil ? THIN_COLOR : THICK_COLOR);
+	draw_centered(textBuf, "Erase", PAD_X, TOOL_Y, PAD_SIZE, TOOL_H, 0.8f, THICK_COLOR);
 
 	// step 6: draw the digits from board[][] for the cursor's box
 
@@ -336,15 +338,76 @@ void draw_bottom(C2D_TextBuf textBuf)
 				continue;
 			char buf[4];
 			snprintf(buf, sizeof buf, "%d", digit); // if the digit is 0, print nothing
-			draw_centered(textBuf, buf, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE, 1.0f, fixed[boxRow * 3 + row][boxCol * 3 + col] ? thickColor : penColor);
+			draw_centered(textBuf, buf, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE, 1.0f, fixed[boxRow * 3 + row][boxCol * 3 + col] ? THICK_COLOR : PEN_COLOR);
 		}
 	}
 }
 
-// TODO: top screen: the whole 9x9 board, the title and mode on the left,
+// TODO: top screen: the whole 9x9 board, the title on the left,
 // "Solved!" on the right.
 void draw_top(C2D_TextBuf textBuf)
 {
+	// layout: the 9x9 board centered, a panel on each side. Lines get their own pixels, so every cell is the same size.
+	const int cellSize = 23;
+	const int boardSize = 9 * cellSize + 6 * 1 + 4 * 2;	// 221: 9 cells, 6 thin lines, 4 thick lines (border included)
+	const int boardX = (TOP_WIDTH - boardSize) / 2;	// 89, the width of each side panel
+	const int boardY = (SCREEN_HEIGHT - boardSize) / 2;	// 9, top and bottom margin
+
+	// pos[i]: where cell i starts, from the board's edge. pos[9] = boardSize, the far edge.
+	int pos[10];
+	for (int i = 0; i < 10; i++) {
+		pos[i] = 2 + i * (cellSize + 1) + i / 3;	// border, cells + 1px lines, +1 more per thick line passed
+	}
+
+	// step 1: background for the whole board (CELL_COLOR)
+	C2D_DrawRectSolid(boardX, boardY, 0, boardSize, boardSize, CELL_COLOR);
+
+	// step 2: highlight the cursor's block and cell
+	int boxCol = cursorCol / 3 * 3;
+	int boxRow = cursorRow / 3 * 3;	
+	C2D_DrawRectSolid(boardX + pos[boxCol], boardY + pos[boxRow], 0, 3 * cellSize + 2, 3 * cellSize + 2, BOX_HIGHLIGHT_COLOR);	// 3 cells + 2 thin lines
+	C2D_DrawRectSolid(boardX + pos[cursorCol], boardY + pos[cursorRow], 0, cellSize, cellSize, HIGHLIGHT_COLOR);
+
+	// step 3: thin lines between cells, 1px, just before each cell
+	// left right
+	for (int row = 1; row < 9; row++) {
+		C2D_DrawRectSolid(boardX, boardY + pos[row] - 1, 0, boardSize, 1, THIN_COLOR);
+	}
+	// top bottom
+	for (int col = 1; col < 9; col++) {
+		C2D_DrawRectSolid(boardX + pos[col] - 1, boardY, 0, 1, boardSize, THIN_COLOR);
+	}
+
+	// step 4: thick lines every 3 cells + the outer border, 2px, just before cells 0, 3, 6 and the far edge
+	// left right
+	for (int row = 0; row < 4; row++) {
+		C2D_DrawRectSolid(boardX, boardY + pos[row * 3] - 2, 0, boardSize, 2, THICK_COLOR);
+	}
+	// top bottom
+	for (int col = 0; col < 4; col++) {
+		C2D_DrawRectSolid(boardX + pos[col * 3] - 2, boardY, 0, 2, boardSize, THICK_COLOR);
+	}
+
+	// step 5: digits from board[][], skip 0s (fixed[row][col] ? THICK_COLOR : PEN_COLOR)
+	// cell (row, col) is at boardX + pos[col], boardY + pos[row], cellSize x cellSize
+	for (int row = 0; row < 9; row++) {
+		for (int col = 0; col < 9; col++) {
+			int digit = board[row][col];
+			if (digit == 0) continue;
+
+			char buf[4];
+			snprintf(buf, sizeof buf, "%d", digit);
+			draw_centered(textBuf, buf, boardX + pos[col], boardY + pos[row], cellSize, cellSize, 0.6f, fixed[row][col] ? THICK_COLOR : PEN_COLOR);
+		}
+	}
+
+	// step 6: left panel, "Sudoku" and Pen / Pencil, centered in the space left of the board
+	draw_centered(textBuf, "Sudoku", 0, boardY, boardX, 24, 0.8f, THICK_COLOR);
+
+	// step 7: right panel, "Solved!" when is_solved(), on the same line as the title
+	if (is_solved()) {
+		draw_centered(textBuf, "Solved!", boardX + boardSize, boardY, TOP_WIDTH - boardX - boardSize, 24, 0.8f, THICK_COLOR);
+	}
 }
 
 int main(int argc, char* argv[])
@@ -357,7 +420,6 @@ int main(int argc, char* argv[])
 	C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
 	C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
 	C2D_TextBuf textBuf = C2D_TextBufNew(256);	// room for 256 glyphs per frame
-	u32 white = C2D_Color32(0xFF, 0xFF, 0xFF, 0xFF);
 
 	load_puzzle();
 
@@ -374,11 +436,11 @@ int main(int argc, char* argv[])
 		C2D_TextBufClear(textBuf);
 		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 
-		C2D_TargetClear(top, white);
+		C2D_TargetClear(top, WHITE);
 		C2D_SceneBegin(top);
 		draw_top(textBuf);
 
-		C2D_TargetClear(bottom, white);
+		C2D_TargetClear(bottom, WHITE);
 		C2D_SceneBegin(bottom);
 		draw_bottom(textBuf);
 
