@@ -185,8 +185,8 @@ void handle_input(u32 kDown)
 		for (int row = 0; row < 3; row++) {
 			for (int col = 0; col < 3; col++) {
 				if (inside(px, py, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE)) {
-					cursorRow = boxRow + row;
-					cursorCol = boxCol + col;
+					cursorRow = boxRow * 3 + row;
+					cursorCol = boxCol * 3 + col;
 				}
 			}
 		}
