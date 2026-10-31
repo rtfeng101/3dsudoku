@@ -101,6 +101,13 @@ void draw_bottom(C2D_TextBuf textBuf)
 	// erase button
 	C2D_DrawRectSolid(padX, toolY, 0, padSize, toolH, cellColor);
 
+	// settings button in the top left, with a ☰ icon
+	int setX = 8, setY = 8, setSize = 24;	// ends at y=31, 8px above the box border
+	C2D_DrawRectSolid(setX, setY, 0, setSize, setSize, cellColor);
+	for (int i = 0; i < 3; i++) {
+		C2D_DrawRectSolid(setX + 5, setY + 6 + i * 5, 0, 14, 2, thickColor);	// 3 bars, 14x2, 5px apart
+	}
+
 	// step 5: text (C2D_TextParse + C2D_DrawText): pad digits, button labels, "Box N" label.
 
 	// step 6: draw the digits from board[][] for the cursor's box.
