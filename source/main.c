@@ -22,9 +22,30 @@ bool fixed[9][9];
 int cursorRow = 0, cursorCol = 0;
 bool pencil = false;
 
-// TODO: put a starting puzzle into board[][] and mark its cells in fixed[][].
+// Puts a starting puzzle into board[][] and marks its cells in fixed[][].
 void load_puzzle(void)
 {
+	// shortcut: one hardcoded puzzle, swap for a list or generator when you want variety
+	static const int puzzle[9][9] = {
+		{5, 3, 0,  0, 7, 0,  0, 0, 0},
+		{6, 0, 0,  1, 9, 5,  0, 0, 0},
+		{0, 9, 8,  0, 0, 0,  0, 6, 0},
+
+		{8, 0, 0,  0, 6, 0,  0, 0, 3},
+		{4, 0, 0,  8, 0, 3,  0, 0, 1},
+		{7, 0, 0,  0, 2, 0,  0, 0, 6},
+
+		{0, 6, 0,  0, 0, 0,  2, 8, 0},
+		{0, 0, 0,  4, 1, 9,  0, 0, 5},
+		{0, 0, 0,  0, 8, 0,  0, 7, 9},
+	};
+
+	for (int row = 0; row < 9; row++) {
+		for (int col = 0; col < 9; col++) {
+			board[row][col] = puzzle[row][col];
+			fixed[row][col] = puzzle[row][col] != 0;	// given numbers can't be changed
+		}
+	}
 }
 
 // TODO: can `num` go at (row, col)? Check the row, the column and the 3x3 box.
@@ -137,7 +158,18 @@ void draw_bottom(C2D_TextBuf textBuf)
 	draw_centered(textBuf, "Pencil", switchX + halfW, toolY, halfW, toolH, 0.8f, pencil ? thinColor : thickColor);
 	draw_centered(textBuf, "Erase", padX, toolY, padSize, toolH, 0.8f, thickColor);
 
-	// step 6: draw the digits from board[][] for the cursor's box.
+	// step 6: draw the digits from board[][] for the cursor's box
+	int boxRow = cursorRow / 3;
+	int boxCol = cursorCol / 3;
+
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			char buf[4];
+			int digit = board[boxRow * 3 + row][boxCol * 3 + col];
+			snprintf(buf, sizeof buf, (digit != 0) ? "%d" : "", digit); // if the digit is 0, print nothing
+			draw_centered(textBuf, buf, boxX + col * cellSize, boxY + row * cellSize, cellSize, cellSize, 1.0f, thickColor);
+		}
+	}
 
 	// step 7: highlight the cursor's cell (in step 1, before the lines).
 }
