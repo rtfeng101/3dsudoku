@@ -60,10 +60,82 @@ bool is_solved(void)
 	return false;
 }
 
-// TODO: D-pad moves the cursor, A/B/X/Y (or the touch screen) change the
-// number in the selected cell. hidKeysDown() gives you the buttons pressed this frame.
+// D-pad moves the cursor, the circle pad jumps a box, the touch screen picks numbers and tools,
+// B erases, L/R flip Pen | Pencil. kDown = buttons pressed this frame (from hidKeysDown()).
 void handle_input(u32 kDown)
 {
+	int num = 0;	// set by steps 2-3: 1-9 from the pad, -1 for erase, 0 if nothing was pressed
+
+	// step 1: D-pad moves the cursor around the 9x9 board
+	if (kDown & KEY_DUP) {
+		cursorRow = (cursorRow + 8) % 9;
+	}
+	if (kDown & KEY_DDOWN) {
+		cursorRow = (cursorRow + 1) % 9;
+	}
+	if (kDown & KEY_DLEFT) {
+		cursorCol = (cursorCol + 8) % 9;
+	}
+	if (kDown & KEY_DRIGHT) {
+		cursorCol = (cursorCol + 1) % 9;
+	}
+
+	// circle pad jumps a whole box, keeping the spot inside the box
+	if (kDown & KEY_CPAD_UP) {
+		cursorRow = (cursorRow + 6) % 9;
+	}
+	if (kDown & KEY_CPAD_DOWN) {
+		cursorRow = (cursorRow + 3) % 9;
+	}
+	if (kDown & KEY_CPAD_LEFT) {
+		cursorCol = (cursorCol + 6) % 9;
+	}
+	if (kDown & KEY_CPAD_RIGHT) {
+		cursorCol = (cursorCol + 3) % 9;
+	}
+
+	// step 2: buttons for the tools
+	// L or R: pencil = !pencil
+	// B: num = -1
+	if (kDown & (KEY_L | KEY_R)) {
+	}
+	if (kDown & KEY_B) {
+	}
+
+	// step 3: touch, only on the frame the stylus lands (kDown & KEY_TOUCH)
+	// touchPosition touch; hidTouchRead(&touch); then touch.px, touch.py are bottom-screen pixels
+	// for each rect from draw_bottom, check "is (px, py) inside (x, y, w, h)?":
+	//   pad key (row, col) -> num = row * 3 + col + 1
+	//   Pen | Pencil       -> pencil = px >= switchX + halfW
+	//   Erase              -> num = -1
+	// needs draw_bottom's layout numbers (padX, keySize, toolY...): move those to file scope first
+	if (kDown & KEY_TOUCH) {
+		touchPosition touch;
+		hidTouchRead(&touch);
+
+		// pad keys
+		for (int row = 0; row < 3; row++) {
+			for (int col = 0; col < 3; col++) {
+				// if (touch inside key (row, col)) num = ...;
+			}
+		}
+
+		// Pen | Pencil switch
+		// if (touch inside the switch) pencil = ...;
+
+		// Erase button
+		// if (touch inside Erase) num = -1;
+	}
+
+	// step 4: put num in the cursor's cell
+	// skip when num == 0 or fixed[cursorRow][cursorCol]
+	// pen: board[cursorRow][cursorCol] = num, or 0 for erase
+	// pencil: do nothing for now, notes come later
+	if (num == 0 || fixed[cursorRow][cursorCol])
+		return;
+
+	if (!pencil) {
+	}
 }
 
 // Draws `str` centered inside the rectangle (x, y, w, h).
