@@ -52,7 +52,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 	int cellSize = 48;
 	int boxSize = 3 * cellSize;	// 144
 	int boxX = 10;	// 8px left margin + 2px border
-	int boxY = 34;	// leaves room above for the "Box N" label
+	int boxY = 42;	// leaves room above for the settings button and "Box N" label
 
 	u32 cellColor  = C2D_Color32(0xF4, 0xF1, 0xEA, 0xFF);	// cream, so the cells show on the white background
 	u32 thinColor  = C2D_Color32(0xC8, 0xC4, 0xBC, 0xFF);	// light gray, between cells
@@ -67,7 +67,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 	C2D_DrawRectSolid(boxX, boxY + cellSize, 0, boxSize, 1, thinColor);	// horizontal
 	C2D_DrawRectSolid(boxX, boxY + 2 * cellSize, 0, boxSize, 1, thinColor);	// horizontal
 
-	// Border last, so it covers the ends of the inner lines
+	// border last
 	C2D_DrawRectSolid(boxX - 2, boxY - 2, 0, 2, boxSize + 4, thickColor); // left
 	C2D_DrawRectSolid(boxX + boxSize, boxY - 2, 0, 2, boxSize + 4, thickColor); // right
 	C2D_DrawRectSolid(boxX - 2, boxY - 2, 0, boxSize + 4, 2, thickColor); // top
@@ -79,7 +79,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 	int keyGap = 8;
 	int padSize = 3 * keySize + 2 * keyGap;	// 148, same as the box with its border
 	int padX = boxX + boxSize + 10;	// 164: 8px gap after the border, ends at x=311 (8px right margin)
-	int padY = boxY + (boxSize - padSize) / 2;	// 32: centered on the box, so it lines up with the border
+	int padY = boxY + (boxSize - padSize) / 2;	// 40: centered on the box, so it lines up with the border
 
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 3; col++) {
@@ -87,7 +87,19 @@ void draw_bottom(C2D_TextBuf textBuf)
 		}
 	}
 
-	// step 4: Pen | Pencil switch under the box, Erase button under the pad.
+	// step 4: Pen | Pencil switch under the box, Erase button under the pad
+	int toolY = boxY + boxSize + 10;	// 196px, 8px gap after the bottom border
+	int toolH = 36;	// 36px, ends at y=231 (8px bottom margin)
+	int switchX = boxX - 2;	// 8px,	 lines up with the box's outer border
+	int switchW = boxSize + 4;	// 148px, the box plus its border
+	int halfW = switchW / 2;	// 74px, Pen | Pencil
+
+	// switch
+	C2D_DrawRectSolid(switchX, toolY, 0, switchW, toolH, cellColor);
+	C2D_DrawRectSolid(switchX + pencil * halfW, toolY, 0, halfW, toolH, thickColor); // select switch
+
+	// erase button
+	C2D_DrawRectSolid(padX, toolY, 0, padSize, toolH, cellColor);
 
 	// step 5: text (C2D_TextParse + C2D_DrawText): pad digits, button labels, "Box N" label.
 
