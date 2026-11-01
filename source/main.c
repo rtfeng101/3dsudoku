@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>
 
 // Screen sizes in pixels. (0, 0) is the top-left corner of each screen.
 #define TOP_WIDTH     400
@@ -45,6 +46,8 @@
 #define HIGHLIGHT_COLOR     C2D_Color32(0xAD, 0xD8, 0xE6, 0xFF)	// pastel blue, highlight
 #define BOX_HIGHLIGHT_COLOR C2D_Color32(0xD6, 0xEB, 0xF2, 0xFF)	// HIGHLIGHT_COLOR halfway to white, the cursor's 3x3 box
 #define PEN_COLOR           C2D_Color32(0x2B, 0x4C, 0x9E, 0xFF)	// dark blue, player numbers that aren't locked in yet
+#define CONFLICT_COLOR      C2D_Color32(0xC8, 0x30, 0x30, 0xFF)	// red, penned numbers that repeat in their row, column or box
+#define CONFLICT_BG_COLOR   C2D_Color32(0xF6, 0xD3, 0xD3, 0xFF)	// light red, background of a conflicting cell
 
 // 0 means an empty cell.
 int board[9][9];
@@ -96,16 +99,36 @@ void load_puzzle(void)
 	}
 }
 
-// TODO: can `num` go at (row, col)? Check the row, the column and the 3x3 box.
+// can `num` go at (row, col)? false if it repeats in the row, the column or the 3x3 box (the cell itself doesn't count)
 bool is_valid(int row, int col, int num)
 {
+	int boxRow = row / 3 * 3;
+	int boxCol = col / 3 * 3;
+	
+	for (int i = 0; i < 9; i++) {
+		// check row and col cells
+		if (i != col && board[row][i] == num) return false;
+		if (i != row && board[i][col] == num) return false;
+		
+		// check the box cells that aren't checked by row and col check
+		int r = boxRow + i / 3;
+		int c = boxCol + i % 3;
+		if ((r != row || c != col) && board[r][c] == num) return false;
+	}
+
 	return true;
 }
 
-// TODO: true when every cell is filled (and valid).
+// true for a penned digit that repeats in its row, column or box (empty and fixed cells never conflict)
+bool is_conflict(int row, int col)
+{
+	return board[row][col] != 0 && !fixed[row][col] && !is_valid(row, col, board[row][col]);
+}
+
+// true when every cell is filled (and valid).
 bool is_solved(void)
 {
-	return false;
+	return memcmp(board, solution, sizeof board) == 0;	// 0 means the bytes match
 }
 
 // true when (px, py) is inside the rect (x, y, w, h), same pixels C2D_DrawRectSolid fills
@@ -269,6 +292,14 @@ void draw_bottom(C2D_TextBuf textBuf)
 	// step 1: draw background for the 3x3 box
 	C2D_DrawRectSolid(BOX_X, BOX_Y, 0, BOX_SIZE, BOX_SIZE, CELL_COLOR);
 
+	// tint conflicting cells red, before the cursor highlight so the cursor stays visible
+	for (int row = 0; row < 3; row++) {
+		for (int col = 0; col < 3; col++) {
+			if (is_conflict(cursorRow / 3 * 3 + row, cursorCol / 3 * 3 + col))
+				C2D_DrawRectSolid(BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, 0, CELL_SIZE, CELL_SIZE, CONFLICT_BG_COLOR);
+		}
+	}
+
 	// highlight the current selected cell
 	C2D_DrawRectSolid(BOX_X + (cursorCol % 3) * CELL_SIZE, BOX_Y + (cursorRow % 3) * CELL_SIZE, 0, CELL_SIZE, CELL_SIZE, HIGHLIGHT_COLOR);
 
@@ -333,17 +364,20 @@ void draw_bottom(C2D_TextBuf textBuf)
 
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 3; col++) {
-			int digit = board[boxRow * 3 + row][boxCol * 3 + col];
+			int r = boxRow * 3 + row;
+			int c = boxCol * 3 + col;
+			int digit = board[r][c];
 			if (digit == 0)
 				continue;
 			char buf[4];
-			snprintf(buf, sizeof buf, "%d", digit); // if the digit is 0, print nothing
-			draw_centered(textBuf, buf, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE, 1.0f, fixed[boxRow * 3 + row][boxCol * 3 + col] ? THICK_COLOR : PEN_COLOR);
+			snprintf(buf, sizeof buf, "%d", digit);
+			u32 color = fixed[r][c] ? THICK_COLOR : is_conflict(r, c) ? CONFLICT_COLOR : PEN_COLOR;
+			draw_centered(textBuf, buf, BOX_X + col * CELL_SIZE, BOX_Y + row * CELL_SIZE, CELL_SIZE, CELL_SIZE, 1.0f, color);
 		}
 	}
 }
 
-// TODO: top screen: the whole 9x9 board, the title on the left,
+// top screen: the whole 9x9 board, the title on the left,
 // "Solved!" on the right.
 void draw_top(C2D_TextBuf textBuf)
 {
@@ -366,6 +400,13 @@ void draw_top(C2D_TextBuf textBuf)
 	int boxCol = cursorCol / 3 * 3;
 	int boxRow = cursorRow / 3 * 3;	
 	C2D_DrawRectSolid(boardX + pos[boxCol], boardY + pos[boxRow], 0, 3 * cellSize + 2, 3 * cellSize + 2, BOX_HIGHLIGHT_COLOR);	// 3 cells + 2 thin lines
+	// tint conflicting cells red, before the cursor highlight so the cursor stays visible
+	for (int row = 0; row < 9; row++) {
+		for (int col = 0; col < 9; col++) {
+			if (is_conflict(row, col))
+				C2D_DrawRectSolid(boardX + pos[col], boardY + pos[row], 0, cellSize, cellSize, CONFLICT_BG_COLOR);
+		}
+	}
 	C2D_DrawRectSolid(boardX + pos[cursorCol], boardY + pos[cursorRow], 0, cellSize, cellSize, HIGHLIGHT_COLOR);
 
 	// step 3: thin lines between cells, 1px, just before each cell
@@ -397,7 +438,8 @@ void draw_top(C2D_TextBuf textBuf)
 
 			char buf[4];
 			snprintf(buf, sizeof buf, "%d", digit);
-			draw_centered(textBuf, buf, boardX + pos[col], boardY + pos[row], cellSize, cellSize, 0.6f, fixed[row][col] ? THICK_COLOR : PEN_COLOR);
+			u32 color = fixed[row][col] ? THICK_COLOR : is_conflict(row, col) ? CONFLICT_COLOR : PEN_COLOR;
+			draw_centered(textBuf, buf, boardX + pos[col], boardY + pos[row], cellSize, cellSize, 0.6f, color);
 		}
 	}
 
