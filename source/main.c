@@ -457,6 +457,7 @@ void draw_top(C2D_TextBuf textBuf)
 						C2D_DrawRectSolid(boardX + pos[col] + (n - 1) % 3 * 7, boardY + pos[row] + (n - 1) / 3 * 7, 0, 2, 2, PEN_COLOR);
 					}
 				}
+				continue;
 			}
 
 			char buf[4];
