@@ -1,7 +1,4 @@
 // sudoku: a sudoku game for the 3DS/2DS.
-//
-// Skeleton only: the main loop and the function stubs are wired up.
-// Fill in every TODO. Press START to quit.
 
 #include <3ds.h>
 #include <citro2d.h>
@@ -125,7 +122,7 @@ bool is_conflict(int row, int col)
 	return board[row][col] != 0 && !fixed[row][col] && !is_valid(row, col, board[row][col]);
 }
 
-// true when every cell is filled (and valid).
+// true when board matches solution
 bool is_solved(void)
 {
 	return memcmp(board, solution, sizeof board) == 0;	// 0 means the bytes match
