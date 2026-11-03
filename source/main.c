@@ -50,6 +50,8 @@
 int board[9][9];
 // true for cells that came with the puzzle or got locked in (the player can't change them).
 bool fixed[9][9];
+// bitmask per cell where bit n means note n is set
+u16 notes[9][9];
 
 int cursorRow = 0, cursorCol = 0;
 bool pencil = false;
@@ -257,6 +259,7 @@ void handle_input(u32 kDown)
 	// erase (num == -1) clears the cell in either mode
 	if (num == -1) {
 		board[cursorRow][cursorCol] = 0;
+		notes[cursorRow][cursorCol] = 0;
 		return;
 	}
 
@@ -264,8 +267,8 @@ void handle_input(u32 kDown)
 	if (!pencil) {
 		board[cursorRow][cursorCol] = num;
 		lock_groups(cursorRow, cursorCol);
-	} else {
-		// pencil: notes come later
+	} else if (board[cursorRow][cursorCol] == 0) {
+		notes[cursorRow][cursorCol] ^= 1 << num; // flips the bitmask
 	}
 }
 
@@ -364,8 +367,21 @@ void draw_bottom(C2D_TextBuf textBuf)
 			int r = boxRow * 3 + row;
 			int c = boxCol * 3 + col;
 			int digit = board[r][c];
-			if (digit == 0)
+
+			// pencil
+			if (digit == 0) {
+				for (int n = 1; n <= 9; n++) {
+					// only draw bitmasked numbers
+					if ((notes[r][c] & (1 << n)) == 0) continue;
+					// draw the current number n
+					// 16px * 16px mini cells
+					char buf[2];
+					snprintf(buf, sizeof buf, "%d", n);
+					draw_centered(textBuf, buf, BOX_X + (col * CELL_SIZE) + (n - 1) % 3 * 16, BOX_Y + (row * CELL_SIZE) + (n - 1) / 3 * 16, 16, 16, 0.5f, PEN_COLOR);
+				}
 				continue;
+			}
+			
 			char buf[4];
 			snprintf(buf, sizeof buf, "%d", digit);
 			u32 color = fixed[r][c] ? THICK_COLOR : is_conflict(r, c) ? CONFLICT_COLOR : PEN_COLOR;
@@ -426,12 +442,23 @@ void draw_top(C2D_TextBuf textBuf)
 		C2D_DrawRectSolid(boardX + pos[col * 3] - 2, boardY, 0, 2, boardSize, THICK_COLOR);
 	}
 
-	// step 5: digits from board[][], skip 0s (fixed[row][col] ? THICK_COLOR : PEN_COLOR)
+	// step 5: digits from board[][]
 	// cell (row, col) is at boardX + pos[col], boardY + pos[row], cellSize x cellSize
 	for (int row = 0; row < 9; row++) {
 		for (int col = 0; col < 9; col++) {
 			int digit = board[row][col];
-			if (digit == 0) continue;
+			
+			// 7px * 7px 
+			// draw dots for readability
+			if (digit == 0) {
+				for (int n = 1; n <= 9; n++) {
+					if ((notes[row][col] & 1 << n) != 0) {
+						// add 3px padding from top left
+						C2D_DrawRectSolid(3 + boardX + pos[col] + (n - 1) % 3 * 7, 3 + boardY + pos[row] + (n - 1) / 3 * 7, 0, 2, 2, PEN_COLOR);
+					}
+				}
+				continue;
+			}
 
 			char buf[4];
 			snprintf(buf, sizeof buf, "%d", digit);
@@ -458,7 +485,7 @@ int main(int argc, char* argv[])
 
 	C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
 	C3D_RenderTarget* bottom = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
-	C2D_TextBuf textBuf = C2D_TextBufNew(256);	// room for 256 glyphs per frame
+	C2D_TextBuf textBuf = C2D_TextBufNew(1024);	// room for 256 glyphs per frame
 
 	load_puzzle();
 
