@@ -453,8 +453,8 @@ void draw_top(C2D_TextBuf textBuf)
 			if (digit == 0) {
 				for (int n = 1; n <= 9; n++) {
 					if ((notes[row][col] & 1 << n) != 0) {
-
-						C2D_DrawRectSolid(boardX + pos[col] + (n - 1) % 3 * 7, boardY + pos[row] + (n - 1) / 3 * 7, 0, 2, 2, PEN_COLOR);
+						// add 3px padding from top left
+						C2D_DrawRectSolid(3 + boardX + pos[col] + (n - 1) % 3 * 7, 3 + boardY + pos[row] + (n - 1) / 3 * 7, 0, 2, 2, PEN_COLOR);
 					}
 				}
 				continue;
