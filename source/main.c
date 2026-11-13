@@ -392,7 +392,7 @@ void draw_bottom(C2D_TextBuf textBuf)
 
 // top screen: the whole 9x9 board, the title on the left,
 // "Solved!" on the right.
-void draw_top(C2D_TextBuf textBuf)
+void draw_top(C2D_TextBuf textBuf, u32 seconds)
 {
 	// layout: the 9x9 board centered, a panel on each side. Lines get their own pixels, so every cell is the same size.
 	const int cellSize = 23;
@@ -469,6 +469,9 @@ void draw_top(C2D_TextBuf textBuf)
 
 	// step 6: left panel, "Sudoku" and Pen / Pencil, centered in the space left of the board
 	draw_centered(textBuf, "Sudoku", 0, boardY, boardX, 24, 0.8f, THICK_COLOR);
+	char timeBuf[12];
+	snprintf(timeBuf, sizeof timeBuf, "%lu:%02lu", seconds / 60, seconds % 60);
+	draw_centered(textBuf, timeBuf, 0, boardY + 24, boardX, 24, 0.8f, THICK_COLOR);
 
 	// step 7: right panel, "Solved!" when is_solved(), on the same line as the title
 	if (is_solved()) {
@@ -488,6 +491,7 @@ int main(int argc, char* argv[])
 	C2D_TextBuf textBuf = C2D_TextBufNew(1024);	// room for 256 glyphs per frame
 
 	load_puzzle();
+	u32 frames = 0; //>60 per second, sync to screen refresh
 
 	while (aptMainLoop())
 	{
@@ -499,12 +503,14 @@ int main(int argc, char* argv[])
 
 		handle_input(kDown);
 
+		if (!is_solved()) frames++; // timer stops on solve
+
 		C2D_TextBufClear(textBuf);
 		C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
 
 		C2D_TargetClear(top, WHITE);
 		C2D_SceneBegin(top);
-		draw_top(textBuf);
+		draw_top(textBuf, frames / 60);
 
 		C2D_TargetClear(bottom, WHITE);
 		C2D_SceneBegin(bottom);
